@@ -187,8 +187,13 @@ def _render_today(today: dict):
 def _render_todos(todos: dict):
     if not todos:
         return
+
+    from datetime import date
+    from assistant.services.todoist import task_priority_label, task_due_date
+
     overdue = todos.get("overdue", [])
     due_soon = todos.get("due_soon", [])
+    this_week = todos.get("this_week", [])
     active = todos.get("active", [])
 
     if not active:
@@ -196,34 +201,54 @@ def _render_todos(todos: dict):
 
     console.print("  [underline]Todos[/underline]")
 
-    PRIORITY_MARKERS = {"urgent": "[bold red]!![/bold red]", "high": "[red]![/red]", "medium": "", "low": ""}
+    PRIORITY_MARKERS = {"urgent": "[bold red]!![/bold red]", "high": "[red]![/red]", "medium": "", "normal": ""}
+
+    overdue_ids = {t["id"] for t in overdue}
+    due_soon_ids = {t["id"] for t in due_soon}
 
     if overdue:
         for t in overdue:
-            marker = PRIORITY_MARKERS.get(t.priority.value, "")
-            console.print(f"    [bold red]OVERDUE[/bold red] {marker} {t.title} [dim](due {t.due_date})[/dim]")
+            marker = PRIORITY_MARKERS.get(task_priority_label(t), "")
+            due = task_due_date(t)
+            console.print(f"    [bold red]OVERDUE[/bold red] {marker} {t['content']} [dim](due {due})[/dim]")
 
     for t in due_soon:
-        if t in overdue:
+        if t["id"] in overdue_ids:
             continue
-        marker = PRIORITY_MARKERS.get(t.priority.value, "")
-        from datetime import date
-        delta = (t.due_date - date.today()).days
-        due_label = "today" if delta == 0 else "tomorrow" if delta == 1 else f"in {delta}d"
-        console.print(f"    [yellow]DUE {due_label}[/yellow] {marker} {t.title}")
+        marker = PRIORITY_MARKERS.get(task_priority_label(t), "")
+        due = task_due_date(t)
+        if due:
+            delta = (due - date.today()).days
+            due_label = "today" if delta == 0 else "tomorrow" if delta == 1 else f"in {delta}d"
+        else:
+            due_label = "soon"
+        console.print(f"    [yellow]DUE {due_label}[/yellow] {marker} {t['content']}")
 
-    # Show other active todos (not already shown)
-    shown_ids = {t.id for t in overdue + due_soon}
-    others = [t for t in active if t.id not in shown_ids]
-    for t in others[:5]:
-        marker = PRIORITY_MARKERS.get(t.priority.value, "")
-        status = "[cyan]~[/cyan] " if t.status.value == "in_progress" else "  "
-        due_str = f" [dim](due {t.due_date})[/dim]" if t.due_date else ""
-        console.print(f"    {status}{marker} {t.title}{due_str}")
+    # This Week tasks not already shown
+    shown_ids = overdue_ids | due_soon_ids
+    week_tasks = [t for t in this_week if t["id"] not in shown_ids]
+    if week_tasks:
+        console.print("    [bold blue]This Week[/bold blue]")
+        for t in week_tasks:
+            marker = PRIORITY_MARKERS.get(task_priority_label(t), "")
+            console.print(f"      {marker} {t['content']}")
+        shown_ids |= {t["id"] for t in week_tasks}
 
-    remaining = len(others) - 5
-    if remaining > 0:
-        console.print(f"    [dim]+{remaining} more[/dim]")
+    # Remaining active todos (backlog)
+    others = [t for t in active if t["id"] not in shown_ids]
+    if others:
+        console.print("    [dim]Backlog[/dim]")
+        for t in others[:5]:
+            marker = PRIORITY_MARKERS.get(task_priority_label(t), "")
+            due = task_due_date(t)
+            due_str = f" [dim](due {due})[/dim]" if due else ""
+            labels = [l for l in t.get("labels", []) if l not in ("This_Week", "Waiting", "Recurring")]
+            label_str = f" [dim][{', '.join(labels)}][/dim]" if labels else ""
+            console.print(f"      {marker} {t['content']}{due_str}{label_str}")
+
+        remaining = len(others) - 5
+        if remaining > 0:
+            console.print(f"    [dim]+{remaining} more[/dim]")
 
     console.print()
 

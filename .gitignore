@@ -11,3 +11,4 @@ data/tokens/
 data/google_credentials.json
 .ruff_cache/
 .pytest_cache/
+.claude/settings.json

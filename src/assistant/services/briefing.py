@@ -9,7 +9,7 @@ from assistant.services import calendar as cal_svc
 from assistant.services import gmail as gmail_svc
 from assistant.services import family as family_svc
 from assistant.services import weather as weather_svc
-from assistant.services import todo as todo_svc
+from assistant.services import todoist as todoist_svc
 
 
 def generate_briefing() -> dict:
@@ -110,10 +110,17 @@ def _get_today_detail(today: date) -> dict:
     # Email
     email = _get_email_section()
 
-    # Todos
-    todos_overdue = todo_svc.overdue()
-    todos_due_soon = todo_svc.due_soon(days=3)
-    todos_active = todo_svc.list_all(include_done=False)
+    # Todos (from Todoist)
+    try:
+        todos_overdue = todoist_svc.get_overdue()
+        todos_due_soon = todoist_svc.get_due_soon(days=3)
+        todos_this_week = todoist_svc.get_this_week()
+        todos_active = todoist_svc.get_active_tasks()
+    except Exception:
+        todos_overdue = []
+        todos_due_soon = []
+        todos_this_week = []
+        todos_active = []
 
     # What's different about today
     highlights = []
@@ -137,6 +144,7 @@ def _get_today_detail(today: date) -> dict:
         "todos": {
             "overdue": todos_overdue,
             "due_soon": todos_due_soon,
+            "this_week": todos_this_week,
             "active": todos_active,
         },
         "highlights": highlights,

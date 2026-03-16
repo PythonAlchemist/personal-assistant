@@ -29,6 +29,7 @@ GOOGLE_ACCOUNTS = {
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
+TODOIST_API_TOKEN = os.environ.get("TODOIST_API_TOKEN", "")
 
 
 def google_token_path(account: str = "personal") -> Path:
