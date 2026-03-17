@@ -14,7 +14,7 @@ def test_local_events_table_exists():
     conn.close()
 
 
-from assistant.services.local_events import parse_ical_feed
+from assistant.services.local_events import parse_ical_feed, cache_events, get_events_between
 
 
 SAMPLE_ICAL = b"""\
@@ -42,6 +42,26 @@ CATEGORIES:Market
 END:VEVENT
 END:VCALENDAR
 """
+
+
+def test_cache_events_and_query(db):
+    events = parse_ical_feed(SAMPLE_ICAL, source="test")
+    cache_events(events, conn=db)
+
+    # Query for the date range covering both events
+    results = get_events_between("2026-03-21", "2026-03-22", conn=db)
+    assert len(results) == 2
+    assert results[0]["title"] == "Spring Family Festival"
+    assert results[1]["title"] == "Farmers Market"
+
+
+def test_cache_events_deduplicates(db):
+    events = parse_ical_feed(SAMPLE_ICAL, source="test")
+    cache_events(events, conn=db)
+    cache_events(events, conn=db)  # Insert again
+
+    results = get_events_between("2026-03-21", "2026-03-22", conn=db)
+    assert len(results) == 2  # No duplicates
 
 
 def test_parse_ical_feed():

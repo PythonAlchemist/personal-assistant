@@ -79,3 +79,55 @@ def parse_ical_feed(data: bytes, source: str) -> list[dict]:
         })
 
     return events
+
+
+def _get_conn(conn=None):
+    """Get a database connection, creating one if not provided."""
+    if conn is not None:
+        return conn
+    c = get_connection(config.DB_PATH)
+    init_db(c)
+    return c
+
+
+def cache_events(events: list[dict], conn=None) -> int:
+    """Upsert events into the local_events table. Returns count of events stored."""
+    db = _get_conn(conn)
+    count = 0
+    for e in events:
+        db.execute("""
+            INSERT INTO local_events (uid, source, title, description, location,
+                start_date, start_time, end_date, end_time, categories, organizer, url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(uid) DO UPDATE SET
+                title=excluded.title,
+                description=excluded.description,
+                location=excluded.location,
+                start_date=excluded.start_date,
+                start_time=excluded.start_time,
+                end_date=excluded.end_date,
+                end_time=excluded.end_time,
+                categories=excluded.categories,
+                organizer=excluded.organizer,
+                url=excluded.url,
+                fetched_at=CURRENT_TIMESTAMP
+        """, (
+            e["uid"], e["source"], e["title"], e["description"], e["location"],
+            e["start_date"], e["start_time"], e["end_date"], e["end_time"],
+            e["categories"], e["organizer"], e["url"],
+        ))
+        count += 1
+    db.commit()
+    return count
+
+
+def get_events_between(start: str, end: str, conn=None) -> list[dict]:
+    """Get cached events where start_date falls within [start, end] inclusive."""
+    db = _get_conn(conn)
+    rows = db.execute(
+        """SELECT * FROM local_events
+           WHERE start_date >= ? AND start_date <= ?
+           ORDER BY start_date, start_time""",
+        (start, end),
+    ).fetchall()
+    return [dict(r) for r in rows]
