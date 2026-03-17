@@ -36,3 +36,12 @@ def google_token_path(account: str = "personal") -> Path:
     """Get the token path for a named account."""
     GOOGLE_TOKENS_DIR.mkdir(parents=True, exist_ok=True)
     return GOOGLE_TOKENS_DIR / f"token_{account}.json"
+
+
+# Local event feeds (iCal format)
+LOCAL_EVENT_FEEDS = {
+    "cabarrus_community": "https://go.activecalendar.com/cabarruscounty/site/community/page/ical",
+    "harrisburg_events": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=14&feed=calendar",
+    "harrisburg_community": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=28&feed=calendar",
+    "harrisburg_parks": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=24&feed=calendar",
+}
