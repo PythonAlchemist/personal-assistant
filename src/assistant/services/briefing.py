@@ -10,6 +10,7 @@ from assistant.services import gmail as gmail_svc
 from assistant.services import family as family_svc
 from assistant.services import weather as weather_svc
 from assistant.services import todoist as todoist_svc
+from assistant.services import local_events as events_svc
 
 
 def generate_briefing() -> dict:
@@ -116,11 +117,44 @@ def _get_today_detail(today: date) -> dict:
         todos_due_soon = todoist_svc.get_due_soon(days=3)
         todos_this_week = todoist_svc.get_this_week()
         todos_active = todoist_svc.get_active_tasks()
+        todos_untriaged = todoist_svc.get_untriaged()
     except Exception:
         todos_overdue = []
         todos_due_soon = []
         todos_this_week = []
         todos_active = []
+        todos_untriaged = []
+
+    # Auto-refresh local event feeds if stale
+    try:
+        if events_svc.feeds_are_stale():
+            events_svc.refresh_all_feeds()
+    except Exception:
+        pass
+
+    # Local events (from cached feeds)
+    local_events_today = []
+    local_events_week = []
+    local_events_weekend = []
+    try:
+        local_events_today = events_svc.get_events_between(
+            today.isoformat(), today.isoformat()
+        )
+        week_end = today + timedelta(days=7)
+        local_events_week = events_svc.get_events_between(
+            (today + timedelta(days=1)).isoformat(), week_end.isoformat()
+        )
+        # Split weekend events out
+        weekend_dates = set()
+        for i in range(7):
+            d = today + timedelta(days=i)
+            if d.weekday() >= 5:
+                weekend_dates.add(d.isoformat())
+        local_events_weekend = [
+            e for e in local_events_week if e["start_date"] in weekend_dates
+        ]
+    except Exception:
+        pass
 
     # What's different about today
     highlights = []
@@ -135,6 +169,10 @@ def _get_today_detail(today: date) -> dict:
 
     if todos_overdue:
         highlights.append(f"{len(todos_overdue)} overdue todo{'s' if len(todos_overdue) != 1 else ''}")
+    if todos_untriaged:
+        highlights.append(f"{len(todos_untriaged)} inbox item{'s' if len(todos_untriaged) != 1 else ''} need triage")
+    if local_events_today:
+        highlights.append(f"{len(local_events_today)} local event{'s' if len(local_events_today) != 1 else ''} today")
 
     return {
         "weather": weather,
@@ -146,6 +184,12 @@ def _get_today_detail(today: date) -> dict:
             "due_soon": todos_due_soon,
             "this_week": todos_this_week,
             "active": todos_active,
+            "untriaged": todos_untriaged,
+        },
+        "local_events": {
+            "today": local_events_today,
+            "week": local_events_week,
+            "weekend": local_events_weekend,
         },
         "highlights": highlights,
     }
