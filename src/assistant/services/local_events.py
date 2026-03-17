@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import urllib.request
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from icalendar import Calendar
 
@@ -140,6 +140,18 @@ def fetch_feed(url: str, source: str, conn=None) -> int:
         data = resp.read()
     events = parse_ical_feed(data, source=source)
     return cache_events(events, conn=conn)
+
+
+def feeds_are_stale(max_age_hours: int = 12, conn=None) -> bool:
+    """Check if cached events are older than max_age_hours."""
+    db = _get_conn(conn)
+    row = db.execute(
+        "SELECT MAX(fetched_at) as latest FROM local_events"
+    ).fetchone()
+    if not row or not row["latest"]:
+        return True
+    latest = datetime.fromisoformat(row["latest"])
+    return datetime.now() - latest > timedelta(hours=max_age_hours)
 
 
 def refresh_all_feeds(conn=None) -> dict[str, int]:
