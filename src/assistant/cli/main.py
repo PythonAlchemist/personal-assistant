@@ -11,6 +11,7 @@ from assistant.cli.maps import maps
 from assistant.cli.todo import todo
 from assistant.cli.briefing import briefing
 from assistant.cli.chat import chat
+from assistant.cli.events import events
 
 
 @click.group()
@@ -30,3 +31,4 @@ cli.add_command(maps)
 cli.add_command(todo)
 cli.add_command(briefing)
 cli.add_command(chat)
+cli.add_command(events)
