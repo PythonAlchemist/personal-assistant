@@ -58,4 +58,21 @@ def init_db(conn: sqlite3.Connection) -> None:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             completed_at TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS local_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid TEXT NOT NULL UNIQUE,
+            source TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            start_date TEXT NOT NULL,
+            start_time TEXT,
+            end_date TEXT,
+            end_time TEXT,
+            categories TEXT DEFAULT '',
+            organizer TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            fetched_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     """)
