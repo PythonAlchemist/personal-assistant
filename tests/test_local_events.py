@@ -14,7 +14,8 @@ def test_local_events_table_exists():
     conn.close()
 
 
-from assistant.services.local_events import parse_ical_feed, cache_events, get_events_between
+from unittest.mock import patch
+from assistant.services.local_events import parse_ical_feed, cache_events, get_events_between, fetch_feed
 
 
 SAMPLE_ICAL = b"""\
@@ -84,3 +85,15 @@ def test_parse_ical_feed():
     assert e2["start_date"] == "2026-03-22"
     assert e2["start_time"] is None  # all-day event
     assert e2["title"] == "Farmers Market"
+
+
+def test_fetch_feed_parses_and_caches(db):
+    with patch("assistant.services.local_events.urllib.request.urlopen") as mock_urlopen:
+        mock_resp = mock_urlopen.return_value.__enter__.return_value
+        mock_resp.read.return_value = SAMPLE_ICAL
+
+        count = fetch_feed("http://example.com/test.ics", "test", conn=db)
+        assert count == 2
+
+    results = get_events_between("2026-03-21", "2026-03-22", conn=db)
+    assert len(results) == 2

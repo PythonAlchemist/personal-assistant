@@ -131,3 +131,24 @@ def get_events_between(start: str, end: str, conn=None) -> list[dict]:
         (start, end),
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+def fetch_feed(url: str, source: str, conn=None) -> int:
+    """Fetch a single iCal feed URL, parse, and cache events. Returns event count."""
+    req = urllib.request.Request(url, headers={"User-Agent": "PersonalAssistant/0.1"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = resp.read()
+    events = parse_ical_feed(data, source=source)
+    return cache_events(events, conn=conn)
+
+
+def refresh_all_feeds(conn=None) -> dict[str, int]:
+    """Fetch all configured feeds and cache events. Returns {source: count}."""
+    results = {}
+    for source, url in config.LOCAL_EVENT_FEEDS.items():
+        try:
+            count = fetch_feed(url, source, conn=conn)
+            results[source] = count
+        except Exception as e:
+            results[source] = -1
+    return results
