@@ -71,6 +71,11 @@ LOCAL_EVENTS_EXCLUDE_KEYWORDS = [
     "Work Session",
 ]
 
+# Priority locations — events here sort to the top
+LOCAL_EVENTS_PRIORITY_LOCATIONS = [
+    "harrisburg", "concord", "university city", "kannapolis",
+]
+
 # Source landing pages — fallback link when individual event URLs aren't available
 LOCAL_EVENT_SOURCE_URLS = {
     "cabarrus_community": "https://go.activecalendar.com/cabarruscounty/site/community",

@@ -275,7 +275,33 @@ def _filter_events(events: list[dict]) -> list[dict]:
                 continue
 
         filtered.append(e)
+
+    # Sort: nearby events first, then by date/time
+    filtered.sort(key=lambda e: (_location_priority(e), e.get("start_date", ""), e.get("start_time") or ""))
     return filtered
+
+
+def _location_priority(event: dict) -> int:
+    """Return 0 for priority locations, 1 for local sources without location, 2 for others."""
+    location = (event.get("location") or "").lower()
+    title = (event.get("title") or "").lower()
+    description = (event.get("description") or "").lower()
+    source = event.get("source", "")
+
+    # Check priority locations
+    for loc in config.LOCAL_EVENTS_PRIORITY_LOCATIONS:
+        if loc in location or loc in title or loc in description:
+            return 0
+
+    # Cabarrus County / Harrisburg sources are inherently local
+    if source in ("cabarrus_community", "harrisburg_events", "harrisburg_community", "harrisburg_parks"):
+        return 0
+
+    # Events with no location — unknown distance
+    if not location:
+        return 2
+
+    return 1
 
 
 def fetch_feed(url: str, source: str, feed_type: str = "ical", conn=None) -> int:
