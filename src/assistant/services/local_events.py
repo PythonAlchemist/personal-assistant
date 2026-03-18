@@ -148,8 +148,21 @@ def parse_rss_feed(data: bytes, source: str) -> list[dict]:
         # Generate stable UID from guid
         uid = hashlib.sha256(f"{source}:{guid}".encode()).hexdigest()[:32]
 
-        # Location from bc:branch_name or description
-        location = (item.findtext(f"{{{ns['bc']}}}branch_name") or "").strip()
+        # Location from bc:location nested element
+        location = ""
+        bc_loc = item.find(f"{{{ns['bc']}}}location")
+        if bc_loc is not None:
+            loc_name = (bc_loc.findtext(f"{{{ns['bc']}}}name") or "").strip()
+            loc_city = (bc_loc.findtext(f"{{{ns['bc']}}}city") or "").strip()
+            if loc_name and loc_city:
+                location = f"{loc_name}, {loc_city}"
+            elif loc_name:
+                location = loc_name
+
+        # Check if virtual
+        is_virtual = (item.findtext(f"{{{ns['bc']}}}is_virtual") or "").strip()
+        if not location and is_virtual == "true":
+            location = "Virtual"
 
         categories = ""
         for cat in item.iter("category"):
