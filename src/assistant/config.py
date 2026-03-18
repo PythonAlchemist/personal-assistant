@@ -71,5 +71,15 @@ LOCAL_EVENTS_EXCLUDE_KEYWORDS = [
     "Work Session",
 ]
 
+# Source landing pages — fallback link when individual event URLs aren't available
+LOCAL_EVENT_SOURCE_URLS = {
+    "cabarrus_community": "https://go.activecalendar.com/cabarruscounty/site/community",
+    "harrisburg_events": "https://www.harrisburgnc.gov/calendar.aspx?CID=14",
+    "harrisburg_community": "https://www.harrisburgnc.gov/calendar.aspx?CID=28",
+    "harrisburg_parks": "https://www.harrisburgnc.gov/calendar.aspx?CID=24",
+    "nc_state_parks": "https://www.ncparks.gov/events",
+    "cml_library": "https://cmlibrary.bibliocommons.com/events",
+}
+
 # Combined for backward compat
 LOCAL_EVENT_FEEDS = LOCAL_EVENT_FEEDS_ICAL

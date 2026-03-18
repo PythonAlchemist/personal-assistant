@@ -309,9 +309,12 @@ def _render_events_table(events: list[dict]):
         if desc:
             title = f"{title}\n[dim italic]{desc}[/dim italic]"
 
-        # URL — only show if it's a full http(s) link
+        # URL — prefer event-specific URL, fall back to source page
+        from assistant.config import LOCAL_EVENT_SOURCE_URLS
         url = e.get("url", "")
-        if url and url.startswith("http"):
+        if not url or not url.startswith("http"):
+            url = LOCAL_EVENT_SOURCE_URLS.get(e.get("source", ""), "")
+        if url:
             title = f"{title}\n[link={url}][blue underline]link[/blue underline][/link]"
 
         # Location
