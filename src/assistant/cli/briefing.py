@@ -7,6 +7,7 @@ from datetime import date, datetime
 import click
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from assistant.services.briefing import generate_briefing
 
@@ -264,33 +265,75 @@ def _render_local_events(local_events: dict):
 
     if today_events:
         console.print("  [underline]Today[/underline]")
-        for e in today_events:
-            _render_event_row(e)
+        _render_events_table(today_events)
         console.print()
 
     if weekend_events:
         console.print("  [underline]This Weekend[/underline]")
-        for e in weekend_events:
-            _render_event_row(e)
+        _render_events_table(weekend_events)
         console.print()
 
     if weekday_events:
         console.print("  [underline]This Week[/underline]")
-        for e in weekday_events[:5]:
-            _render_event_row(e)
-        remaining = len(weekday_events) - 5
+        _render_events_table(weekday_events[:8])
+        remaining = len(weekday_events) - 8
         if remaining > 0:
             console.print(f"  [dim]+{remaining} more[/dim]")
         console.print()
 
 
-def _render_event_row(event: dict):
-    title = event["title"]
-    d = _parse_date(event["start_date"])
-    day_label = d.strftime("%a %b %d")
-    time_str = f" {event['start_time']}" if event.get("start_time") else ""
-    location = f"  [dim]@ {event['location']}[/dim]" if event.get("location") else ""
-    console.print(f"    {day_label}{time_str}  {title}{location}")
+def _render_events_table(events: list[dict]):
+    import re
+
+    table = Table(show_header=True, header_style="bold", box=None, padding=(0, 1), pad_edge=False)
+    table.add_column("When", style="cyan", no_wrap=True, min_width=17)
+    table.add_column("Event", no_wrap=False)
+    table.add_column("Where", style="dim", max_width=24)
+    table.add_column("Tags", style="dim", max_width=18)
+
+    for e in events:
+        d = _parse_date(e["start_date"])
+        day = d.strftime("%a %d")
+        time_str = e.get("start_time") or "all day"
+        when = f"{day} {time_str}"
+
+        title = e.get("title", "")
+        if len(title) > 35:
+            title = title[:34] + "…"
+
+        # One-line description snippet
+        desc = re.sub(r"<[^>]+>", "", (e.get("description") or "")).strip()
+        desc = re.sub(r"\s+", " ", desc)
+        if len(desc) > 50:
+            desc = desc[:49] + "…"
+        if desc:
+            title = f"{title}\n[dim italic]{desc}[/dim italic]"
+
+        # URL on same line as title
+        url = e.get("url", "")
+        if url:
+            title = f"{title}\n[link={url}][blue underline]link[/blue underline][/link]"
+
+        # Location
+        location = (e.get("location") or "").strip()
+        if len(location) > 24:
+            location = location[:23] + "…"
+
+        # Categories — pick first 2 meaningful ones, skip audience/language tags
+        cats = e.get("categories", "")
+        if cats:
+            skip = {"english", "spanish", "adults", "older adults", "new adults (18-24)",
+                    "high school", "middle school", "parents/caregivers",
+                    "homeschool", "teens (12-18)", "preteens (10-12)",
+                    "school age (5-11)", "preschool (3-5)", "babies (0-2)",
+                    "toddlers (2-3)"}
+            cat_list = [c.strip() for c in cats.split(",")
+                        if c.strip().lower() not in skip][:2]
+            cats = ", ".join(cat_list)
+
+        table.add_row(when, title, location, cats)
+
+    console.print(table)
 
 
 def _render_email(email: dict):
