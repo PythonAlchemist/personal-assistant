@@ -27,7 +27,11 @@ def parse_ical_feed(data: bytes, source: str) -> list[dict]:
         summary = str(component.get("SUMMARY", ""))
         description = str(component.get("DESCRIPTION", ""))
         location = str(component.get("LOCATION", ""))
-        url = str(component.get("URL", ""))
+        raw_url = str(component.get("URL", ""))
+        # Fix relative URLs (e.g., Harrisburg feeds return paths like /common/...)
+        if raw_url and not raw_url.startswith("http"):
+            raw_url = ""
+        url = raw_url
         organizer = str(component.get("ORGANIZER", ""))
 
         # Categories can be a list or single value

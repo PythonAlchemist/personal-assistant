@@ -309,9 +309,9 @@ def _render_events_table(events: list[dict]):
         if desc:
             title = f"{title}\n[dim italic]{desc}[/dim italic]"
 
-        # URL on same line as title
+        # URL — only show if it's a full http(s) link
         url = e.get("url", "")
-        if url:
+        if url and url.startswith("http"):
             title = f"{title}\n[link={url}][blue underline]link[/blue underline][/link]"
 
         # Location
