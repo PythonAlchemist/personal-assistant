@@ -210,7 +210,7 @@ def cache_events(events: list[dict], conn=None) -> int:
     return count
 
 
-def get_events_between(start: str, end: str, conn=None) -> list[dict]:
+def get_events_between(start: str, end: str, conn=None, filtered: bool = True) -> list[dict]:
     """Get cached events where start_date falls within [start, end] inclusive."""
     db = _get_conn(conn)
     rows = db.execute(
@@ -219,7 +219,46 @@ def get_events_between(start: str, end: str, conn=None) -> list[dict]:
            ORDER BY start_date, start_time""",
         (start, end),
     ).fetchall()
-    return [dict(r) for r in rows]
+    events = [dict(r) for r in rows]
+    if filtered:
+        events = _filter_events(events)
+    return events
+
+
+def _filter_events(events: list[dict]) -> list[dict]:
+    """Filter out noise: distant parks, recurring tours, government meetings."""
+    exclude_keywords = config.LOCAL_EVENTS_EXCLUDE_KEYWORDS
+    nearby_parks = config.NC_PARKS_NEARBY
+
+    filtered = []
+    for e in events:
+        title = e.get("title", "")
+        location = e.get("location", "")
+        source = e.get("source", "")
+
+        # Skip events matching exclude keywords
+        if any(kw.lower() in title.lower() for kw in exclude_keywords):
+            continue
+
+        # For NC State Parks, only keep nearby parks
+        if source == "nc_state_parks":
+            if not any(park.lower() in location.lower() or park.lower() in title.lower()
+                       for park in nearby_parks):
+                continue
+
+        # For CML Library, skip adult-only events (keep kid/family/all-ages)
+        if source == "cml_library":
+            cats = e.get("categories", "").lower()
+            family_tags = ("babies", "toddler", "preschool", "school age",
+                           "preteens", "storytime", "family", "youth")
+            adult_only_tags = ("adults", "older adults", "new adults")
+            has_family = any(tag in cats for tag in family_tags)
+            has_only_adult = any(tag in cats for tag in adult_only_tags) and not has_family
+            if has_only_adult:
+                continue
+
+        filtered.append(e)
+    return filtered
 
 
 def fetch_feed(url: str, source: str, feed_type: str = "ical", conn=None) -> int:

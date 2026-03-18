@@ -51,5 +51,25 @@ LOCAL_EVENT_FEEDS_RSS = {
     "cml_library": "https://gateway.bibliocommons.com/v2/libraries/cmlibrary/rss/events",
 }
 
+# NC State Parks near Harrisburg (within ~60 miles)
+NC_PARKS_NEARBY = {
+    "Lake Norman", "Morrow Mountain", "Reed Gold Mine",
+    "Uwharrie", "Crowders Mountain", "South Mountains",
+    "Duke Power", "Latta Plantation", "McDowell",
+}
+
+# Keywords that indicate non-family or recurring noise events to filter out
+LOCAL_EVENTS_EXCLUDE_KEYWORDS = [
+    "Daily Tours",
+    "Board Meeting",
+    "Advisory Board",
+    "Crime Prevention",
+    "Commissioners",
+    "Soil and Water",
+    "PARTF Meeting",
+    "Cabarrus Summit",
+    "Work Session",
+]
+
 # Combined for backward compat
 LOCAL_EVENT_FEEDS = LOCAL_EVENT_FEEDS_ICAL
