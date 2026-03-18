@@ -1,8 +1,9 @@
-"""Local events — fetch and parse iCal/RSS feeds from community calendars."""
+"""Local events — fetch and parse iCal/RSS/HTML feeds from community calendars."""
 
 from __future__ import annotations
 
 import hashlib
+import re
 import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
@@ -187,6 +188,88 @@ def parse_rss_feed(data: bytes, source: str) -> list[dict]:
     return events
 
 
+def scrape_untappd_events(url: str, source: str, venue_name: str = "") -> list[dict]:
+    """Scrape events from an Untappd venue events page."""
+    req = urllib.request.Request(url, headers={"User-Agent": "PersonalAssistant/0.1"})
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        html = resp.read().decode("utf-8", errors="replace")
+
+    events = []
+    # Parse event blocks: <p class="date">...</p> followed by <h4 class="name"><a href="...">
+    date_times = re.findall(r'class="date"[^>]*>(.*?)</p>', html, re.DOTALL)
+    titles = re.findall(r'class="name"[^>]*>\s*<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', html, re.DOTALL)
+
+    for i, dt_raw in enumerate(date_times):
+        if i >= len(titles):
+            break
+
+        event_url, title = titles[i]
+        title = re.sub(r"<[^>]+>", "", title).strip()
+        if not event_url.startswith("http"):
+            event_url = f"https://untappd.com{event_url}"
+
+        # Parse date: "Sun, Mar 29th • 5:00 PM EDT - Sun, Mar 29th • 7:00 PM EDT"
+        dt_clean = re.sub(r"<[^>]+>", "", dt_raw).strip()
+        # Extract start portion (before the dash)
+        parts = dt_clean.split(" - ")
+        start_part = parts[0].strip()
+
+        # Parse: "Sun, Mar 29th • 5:00 PM EDT"
+        match = re.match(
+            r'\w+,\s+(\w+)\s+(\d+)\w*\s*•\s*(\d+:\d+\s*[AP]M)',
+            start_part
+        )
+        if not match:
+            continue
+
+        month_str, day_str, time_str = match.groups()
+        # Determine year (assume current or next year)
+        today = date.today()
+        try:
+            parsed = datetime.strptime(f"{month_str} {day_str} {today.year} {time_str}", "%b %d %Y %I:%M %p")
+            if parsed.date() < today:
+                parsed = parsed.replace(year=today.year + 1)
+        except ValueError:
+            continue
+
+        start_date = parsed.strftime("%Y-%m-%d")
+        start_time = parsed.strftime("%H:%M")
+
+        # Parse end time if available
+        end_date = None
+        end_time = None
+        if len(parts) > 1:
+            end_match = re.search(r'(\d+:\d+\s*[AP]M)', parts[1])
+            if end_match:
+                try:
+                    end_parsed = datetime.strptime(f"{month_str} {day_str} {today.year} {end_match.group(1)}", "%b %d %Y %I:%M %p")
+                    if end_parsed.date() < today:
+                        end_parsed = end_parsed.replace(year=today.year + 1)
+                    end_date = end_parsed.strftime("%Y-%m-%d")
+                    end_time = end_parsed.strftime("%H:%M")
+                except ValueError:
+                    pass
+
+        uid = hashlib.sha256(f"{source}:{event_url}".encode()).hexdigest()[:32]
+
+        events.append({
+            "uid": uid,
+            "source": source,
+            "title": title,
+            "description": "",
+            "location": venue_name,
+            "start_date": start_date,
+            "start_time": start_time,
+            "end_date": end_date,
+            "end_time": end_time,
+            "categories": "Brewery",
+            "organizer": "",
+            "url": event_url,
+        })
+
+    return events
+
+
 def _get_conn(conn=None):
     """Get a database connection, creating one if not provided."""
     if conn is not None:
@@ -293,8 +376,10 @@ def _location_priority(event: dict) -> int:
         if loc in location or loc in title or loc in description:
             return 0
 
-    # Cabarrus County / Harrisburg sources are inherently local
-    if source in ("cabarrus_community", "harrisburg_events", "harrisburg_community", "harrisburg_parks"):
+    # Cabarrus County / Harrisburg / local brewery sources are inherently local
+    local_sources = ("cabarrus_community", "harrisburg_events", "harrisburg_community",
+                     "harrisburg_parks", "cabarrus_brewing", "percent_taphouse", "southern_strain")
+    if source in local_sources:
         return 0
 
     # Events with no location — unknown distance
@@ -340,6 +425,13 @@ def refresh_all_feeds(conn=None) -> dict[str, int]:
     for source, url in config.LOCAL_EVENT_FEEDS_RSS.items():
         try:
             count = fetch_feed(url, source, feed_type="rss", conn=conn)
+            results[source] = count
+        except Exception:
+            results[source] = -1
+    for source, info in config.LOCAL_EVENT_UNTAPPD.items():
+        try:
+            events = scrape_untappd_events(info["url"], source, venue_name=info["venue"])
+            count = cache_events(events, conn=conn)
             results[source] = count
         except Exception:
             results[source] = -1
