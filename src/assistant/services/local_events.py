@@ -378,7 +378,8 @@ def _location_priority(event: dict) -> int:
 
     # Cabarrus County / Harrisburg / local brewery sources are inherently local
     local_sources = ("cabarrus_community", "harrisburg_events", "harrisburg_community",
-                     "harrisburg_parks", "cabarrus_brewing", "percent_taphouse", "southern_strain")
+                     "harrisburg_parks", "cabarrus_brewing", "percent_taphouse",
+                     "southern_strain", "luck_factory")
     if source in local_sources:
         return 0
 

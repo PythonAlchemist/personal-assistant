@@ -46,6 +46,7 @@ LOCAL_EVENT_FEEDS_ICAL = {
     "harrisburg_parks": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=24&feed=calendar",
     "nc_state_parks": "https://events.dncr.nc.gov/department/north-carolina-state-parks-and-recreation/calendar.ics",
     "cabarrus_brewing": "https://www.cabarrusbrewing.com/events/?ical=1",
+    "luck_factory": "https://luckfactorygames.com/events-calendar/?ical=1",
 }
 
 LOCAL_EVENT_FEEDS_RSS = {
@@ -86,6 +87,7 @@ LOCAL_EVENT_SOURCE_URLS = {
     "nc_state_parks": "https://www.ncparks.gov/events",
     "cml_library": "https://cmlibrary.bibliocommons.com/events",
     "cabarrus_brewing": "https://www.cabarrusbrewing.com/events-calendar/",
+    "luck_factory": "https://luckfactorygames.com/events/",
     "percent_taphouse": "https://untappd.com/v/percent-tap-house/8324335/events",
     "southern_strain": "https://untappd.com/v/southern-strain-brewing-company/8995244/events",
 }
