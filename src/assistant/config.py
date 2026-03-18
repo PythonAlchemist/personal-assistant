@@ -38,10 +38,18 @@ def google_token_path(account: str = "personal") -> Path:
     return GOOGLE_TOKENS_DIR / f"token_{account}.json"
 
 
-# Local event feeds (iCal format)
-LOCAL_EVENT_FEEDS = {
+# Local event feeds — iCal (.ics) and RSS (.xml) formats
+LOCAL_EVENT_FEEDS_ICAL = {
     "cabarrus_community": "https://go.activecalendar.com/cabarruscounty/site/community/page/ical",
     "harrisburg_events": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=14&feed=calendar",
     "harrisburg_community": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=28&feed=calendar",
     "harrisburg_parks": "https://www.harrisburgnc.gov/common/modules/iCalendar/iCalendar.aspx?catID=24&feed=calendar",
+    "nc_state_parks": "https://events.dncr.nc.gov/department/north-carolina-state-parks-and-recreation/calendar.ics",
 }
+
+LOCAL_EVENT_FEEDS_RSS = {
+    "cml_library": "https://gateway.bibliocommons.com/v2/libraries/cmlibrary/rss/events",
+}
+
+# Combined for backward compat
+LOCAL_EVENT_FEEDS = LOCAL_EVENT_FEEDS_ICAL

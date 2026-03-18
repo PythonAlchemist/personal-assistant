@@ -1,9 +1,12 @@
-"""Local events — fetch and parse iCal feeds from community calendars."""
+"""Local events — fetch and parse iCal/RSS feeds from community calendars."""
 
 from __future__ import annotations
 
+import hashlib
 import urllib.request
+import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
+from email.utils import parsedate_to_datetime
 
 from icalendar import Calendar
 
@@ -81,6 +84,92 @@ def parse_ical_feed(data: bytes, source: str) -> list[dict]:
     return events
 
 
+def parse_rss_feed(data: bytes, source: str) -> list[dict]:
+    """Parse RSS XML bytes into a list of event dicts."""
+    root = ET.fromstring(data)
+    events = []
+
+    # Detect namespaces (e.g., BiblioCommons uses bc:start_date)
+    ns = {}
+    for prefix, uri in [
+        ("bc", "http://bibliocommons.com/rss/1.0/modules/event/"),
+        ("dc", "http://purl.org/dc/elements/1.1/"),
+    ]:
+        ns[prefix] = uri
+
+    for item in root.iter("item"):
+        title = (item.findtext("title") or "").strip()
+        description = (item.findtext("description") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        guid = (item.findtext("guid") or link or "").strip()
+
+        # Try multiple date sources
+        start_date = None
+        start_time = None
+        end_date = None
+        end_time = None
+
+        # 1. BiblioCommons bc:start_date / bc:end_date
+        bc_start = item.findtext(f"{{{ns['bc']}}}start_date")
+        bc_end = item.findtext(f"{{{ns['bc']}}}end_date")
+        if bc_start:
+            try:
+                dt = datetime.fromisoformat(bc_start)
+                start_date = dt.strftime("%Y-%m-%d")
+                start_time = dt.strftime("%H:%M") if dt.hour or dt.minute else None
+            except (ValueError, TypeError):
+                start_date = bc_start[:10] if len(bc_start) >= 10 else None
+        if bc_end:
+            try:
+                dt = datetime.fromisoformat(bc_end)
+                end_date = dt.strftime("%Y-%m-%d")
+                end_time = dt.strftime("%H:%M") if dt.hour or dt.minute else None
+            except (ValueError, TypeError):
+                pass
+
+        # 2. Standard pubDate
+        if not start_date:
+            pub_date_str = item.findtext("pubDate") or ""
+            if pub_date_str:
+                try:
+                    dt = parsedate_to_datetime(pub_date_str)
+                    start_date = dt.strftime("%Y-%m-%d")
+                    start_time = dt.strftime("%H:%M") if dt.hour or dt.minute else None
+                except (ValueError, TypeError):
+                    pass
+
+        if not start_date:
+            continue  # Skip events with no parseable date
+
+        # Generate stable UID from guid
+        uid = hashlib.sha256(f"{source}:{guid}".encode()).hexdigest()[:32]
+
+        # Location from bc:branch_name or description
+        location = (item.findtext(f"{{{ns['bc']}}}branch_name") or "").strip()
+
+        categories = ""
+        for cat in item.iter("category"):
+            if cat.text:
+                categories = cat.text if not categories else f"{categories},{cat.text}"
+
+        events.append({
+            "uid": uid,
+            "source": source,
+            "title": title,
+            "description": description,
+            "location": location,
+            "start_date": start_date,
+            "start_time": start_time,
+            "end_date": end_date,
+            "end_time": end_time,
+            "categories": categories,
+            "organizer": "",
+            "url": link,
+        })
+
+    return events
+
+
 def _get_conn(conn=None):
     """Get a database connection, creating one if not provided."""
     if conn is not None:
@@ -133,12 +222,15 @@ def get_events_between(start: str, end: str, conn=None) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def fetch_feed(url: str, source: str, conn=None) -> int:
-    """Fetch a single iCal feed URL, parse, and cache events. Returns event count."""
+def fetch_feed(url: str, source: str, feed_type: str = "ical", conn=None) -> int:
+    """Fetch a feed URL, parse, and cache events. feed_type is 'ical' or 'rss'."""
     req = urllib.request.Request(url, headers={"User-Agent": "PersonalAssistant/0.1"})
     with urllib.request.urlopen(req, timeout=15) as resp:
         data = resp.read()
-    events = parse_ical_feed(data, source=source)
+    if feed_type == "rss":
+        events = parse_rss_feed(data, source=source)
+    else:
+        events = parse_ical_feed(data, source=source)
     return cache_events(events, conn=conn)
 
 
@@ -157,10 +249,16 @@ def feeds_are_stale(max_age_hours: int = 12, conn=None) -> bool:
 def refresh_all_feeds(conn=None) -> dict[str, int]:
     """Fetch all configured feeds and cache events. Returns {source: count}."""
     results = {}
-    for source, url in config.LOCAL_EVENT_FEEDS.items():
+    for source, url in config.LOCAL_EVENT_FEEDS_ICAL.items():
         try:
-            count = fetch_feed(url, source, conn=conn)
+            count = fetch_feed(url, source, feed_type="ical", conn=conn)
             results[source] = count
-        except Exception as e:
+        except Exception:
+            results[source] = -1
+    for source, url in config.LOCAL_EVENT_FEEDS_RSS.items():
+        try:
+            count = fetch_feed(url, source, feed_type="rss", conn=conn)
+            results[source] = count
+        except Exception:
             results[source] = -1
     return results
