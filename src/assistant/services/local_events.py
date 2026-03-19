@@ -357,6 +357,13 @@ def _filter_events(events: list[dict]) -> list[dict]:
             if has_only_adult:
                 continue
 
+        # On weekdays, skip events before 18:00 (working + Kai daycare pickup ~6pm)
+        event_date = date.fromisoformat(e.get("start_date", "2000-01-01"))
+        if event_date.weekday() < 5:  # Mon-Fri
+            event_time = e.get("start_time")
+            if event_time and event_time < "18:00":
+                continue
+
         filtered.append(e)
 
     # Sort: nearby events first, then by date/time
