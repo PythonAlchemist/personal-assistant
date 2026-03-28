@@ -47,6 +47,7 @@ LOCAL_EVENT_FEEDS_ICAL = {
     "nc_state_parks": "https://events.dncr.nc.gov/department/north-carolina-state-parks-and-recreation/calendar.ics",
     "cabarrus_brewing": "https://www.cabarrusbrewing.com/events/?ical=1",
     "luck_factory": "https://luckfactorygames.com/events-calendar/?ical=1",
+    "usnwc": "https://whitewater.org/events/?ical=1",
 }
 
 LOCAL_EVENT_FEEDS_RSS = {
@@ -90,6 +91,7 @@ LOCAL_EVENT_SOURCE_URLS = {
     "luck_factory": "https://luckfactorygames.com/events/",
     "percent_taphouse": "https://untappd.com/v/percent-tap-house/8324335/events",
     "southern_strain": "https://untappd.com/v/southern-strain-brewing-company/8995244/events",
+    "usnwc": "https://whitewater.org/calendar/",
 }
 
 # Untappd venue event pages (HTML scrape)
