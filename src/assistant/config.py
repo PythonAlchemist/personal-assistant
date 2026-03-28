@@ -50,9 +50,7 @@ LOCAL_EVENT_FEEDS_ICAL = {
     "usnwc": "https://whitewater.org/events/?ical=1",
 }
 
-LOCAL_EVENT_FEEDS_RSS = {
-    "cml_library": "https://gateway.bibliocommons.com/v2/libraries/cmlibrary/rss/events",
-}
+LOCAL_EVENT_FEEDS_RSS = {}
 
 # NC State Parks near Harrisburg (within ~60 miles)
 NC_PARKS_NEARBY = {
@@ -86,7 +84,6 @@ LOCAL_EVENT_SOURCE_URLS = {
     "harrisburg_community": "https://www.harrisburgnc.gov/calendar.aspx?CID=28",
     "harrisburg_parks": "https://www.harrisburgnc.gov/calendar.aspx?CID=24",
     "nc_state_parks": "https://www.ncparks.gov/events",
-    "cml_library": "https://cmlibrary.bibliocommons.com/events",
     "cabarrus_brewing": "https://www.cabarrusbrewing.com/events-calendar/",
     "luck_factory": "https://luckfactorygames.com/events/",
     "percent_taphouse": "https://untappd.com/v/percent-tap-house/8324335/events",

@@ -346,17 +346,6 @@ def _filter_events(events: list[dict]) -> list[dict]:
                        for park in nearby_parks):
                 continue
 
-        # For CML Library, skip adult-only events (keep kid/family/all-ages)
-        if source == "cml_library":
-            cats = e.get("categories", "").lower()
-            family_tags = ("babies", "toddler", "preschool", "school age",
-                           "preteens", "storytime", "family", "youth")
-            adult_only_tags = ("adults", "older adults", "new adults")
-            has_family = any(tag in cats for tag in family_tags)
-            has_only_adult = any(tag in cats for tag in adult_only_tags) and not has_family
-            if has_only_adult:
-                continue
-
         # On weekdays, skip events before 18:00 (working + Kai daycare pickup ~6pm)
         event_date = date.fromisoformat(e.get("start_date", "2000-01-01"))
         if event_date.weekday() < 5:  # Mon-Fri
