@@ -41,29 +41,11 @@
         <!-- WEATHER -->
         {% if today.weather %}
         <tr>
-          <td style="padding:18px 32px 0 32px;">
-            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Weather</div>
+          <td style="padding:16px 32px 0 32px;">
             {% set wx = today.weather %}
-            {% if wx.current %}
-            <div style="font-size:15px;color:#222;">
-              <span style="font-weight:600;">{{ wx.current.temp|int }}&deg;F</span>
-              <span style="color:#555;"> — {{ wx.current.condition }}</span>
-              {% if wx.current.feels_like %}
-              <span style="color:#777;font-size:13px;"> (feels {{ wx.current.feels_like|int }}&deg;)</span>
-              {% endif %}
-              {% if wx.current.wind_speed %}
-              <span style="color:#777;font-size:13px;"> · Wind {{ wx.current.wind_speed|int }} mph</span>
-              {% endif %}
+            <div style="font-size:14px;color:#555;">
+              {% if wx.current %}<span style="font-weight:600;color:#222;">{{ wx.current.temp|int }}&deg;F</span> {{ wx.current.condition|lower }}{% endif %}{% if wx.today %} · H:{{ wx.today.high|int }}&deg; L:{{ wx.today.low|int }}&deg;{% if wx.today.precip_chance and wx.today.precip_chance > 10 %} · {{ wx.today.precip_chance }}% rain{% endif %}{% endif %}
             </div>
-            {% endif %}
-            {% if wx.today %}
-            <div style="font-size:13px;color:#555;margin-top:4px;">
-              High {{ wx.today.high|int }}&deg; / Low {{ wx.today.low|int }}&deg;
-              {% if wx.today.precip_chance %}
-              · {{ wx.today.precip_chance }}% chance of rain
-              {% endif %}
-            </div>
-            {% endif %}
           </td>
         </tr>
         {% endif %}
