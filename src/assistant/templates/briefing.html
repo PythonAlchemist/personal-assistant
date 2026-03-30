@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Briefing — {{ date }}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;color:#222;">
+
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f4f4;padding:20px 0;">
+  <tr>
+    <td align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.10);">
+
+        <!-- HEADER -->
+        <tr>
+          <td style="background-color:#1a1a2e;padding:28px 32px 22px 32px;text-align:center;">
+            <div style="color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">{{ greeting }}</div>
+            <div style="color:#a0aec0;font-size:14px;margin-top:6px;">{{ date }}</div>
+          </td>
+        </tr>
+
+        {% if today.highlights %}
+        <!-- HIGHLIGHTS BANNER -->
+        <tr>
+          <td style="background-color:#fffbeb;border-left:4px solid #f59e0b;padding:14px 32px;">
+            {% for h in today.highlights %}
+            <div style="color:#92400e;font-size:14px;padding:2px 0;">&#9679; {{ h }}</div>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- TODAY SECTION HEADER -->
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Today</div>
+          </td>
+        </tr>
+
+        <!-- WEATHER -->
+        {% if today.weather %}
+        <tr>
+          <td style="padding:18px 32px 0 32px;">
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Weather</div>
+            {% set wx = today.weather %}
+            {% if wx.current %}
+            <div style="font-size:15px;color:#222;">
+              <span style="font-weight:600;">{{ wx.current.temp|int }}&deg;F</span>
+              <span style="color:#555;"> — {{ wx.current.condition }}</span>
+              {% if wx.current.feels_like %}
+              <span style="color:#777;font-size:13px;"> (feels {{ wx.current.feels_like|int }}&deg;)</span>
+              {% endif %}
+              {% if wx.current.wind_speed %}
+              <span style="color:#777;font-size:13px;"> · Wind {{ wx.current.wind_speed|int }} mph</span>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% if wx.today %}
+            <div style="font-size:13px;color:#555;margin-top:4px;">
+              High {{ wx.today.high|int }}&deg; / Low {{ wx.today.low|int }}&deg;
+              {% if wx.today.precip_chance %}
+              · {{ wx.today.precip_chance }}% chance of rain
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- TODAY'S SCHEDULE -->
+        <tr>
+          <td style="padding:18px 32px 0 32px;">
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Schedule</div>
+            {% if today.events %}
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              {% for event in today.events %}
+              <tr>
+                <td style="padding:4px 0;vertical-align:top;width:100px;">
+                  <span style="font-size:13px;color:#555;white-space:nowrap;">{{ format_event_time_short(event) }}</span>
+                </td>
+                <td style="padding:4px 0 4px 8px;vertical-align:top;">
+                  <span style="font-size:14px;color:#222;">{{ event.summary }}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+            {% else %}
+            <div style="font-size:14px;color:#777;font-style:italic;">No events today — open schedule</div>
+            {% endif %}
+          </td>
+        </tr>
+
+        <!-- FREE BLOCKS -->
+        {% if today.free_blocks %}
+        <tr>
+          <td style="padding:14px 32px 0 32px;">
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Free Time</div>
+            {% for block in today.free_blocks %}
+            <span style="display:inline-block;background-color:#ebf8ff;color:#2b6cb0;border-radius:12px;padding:3px 10px;font-size:13px;margin:2px 4px 2px 0;">
+              {{ block.start }}–{{ block.end }} ({{ block.minutes }}m)
+            </span>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- SPACER -->
+        <tr><td style="height:20px;"></td></tr>
+
+        <!-- THIS WEEK SECTION HEADER -->
+        {% if week_weekdays %}
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">This Week</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              {% for day in week_weekdays %}
+              <tr>
+                <td style="padding:6px 0;vertical-align:top;border-bottom:1px solid #f0f0f0;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td style="vertical-align:top;width:110px;">
+                        <div style="font-weight:700;font-size:14px;color:#1a1a2e;">{{ day.label }}</div>
+                        <div style="font-size:12px;color:#777;">{{ day.short_date }}
+                          {% set day_wx = wx_by_date.get(day.date) %}
+                          {% if day_wx %}
+                          · {{ day_wx.high|int }}&deg;/{{ day_wx.low|int }}&deg;
+                          {% endif %}
+                        </div>
+                      </td>
+                      <td style="vertical-align:top;padding-left:12px;">
+                        {% if day.events %}
+                        {% for event in day.events %}
+                        <div style="font-size:13px;color:#444;padding:1px 0;">
+                          <span style="color:#999;">{{ format_event_time_short(event) }}</span>
+                          <span> {{ event.summary }}</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div style="font-size:13px;color:#aaa;font-style:italic;">Free</div>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- WEEKEND SECTION HEADER -->
+        {% if weekend_days %}
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;margin-top:8px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Weekend</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 8px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+              {% for day in weekend_days %}
+              <tr>
+                <td style="padding:6px 0;vertical-align:top;border-bottom:1px solid #f0f0f0;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                    <tr>
+                      <td style="vertical-align:top;width:110px;">
+                        <div style="font-weight:700;font-size:14px;color:#1a1a2e;">{{ day.label }}</div>
+                        <div style="font-size:12px;color:#777;">{{ day.short_date }}
+                          {% set day_wx = wx_by_date.get(day.date) %}
+                          {% if day_wx %}
+                          · {{ day_wx.high|int }}/{{ day_wx.low|int }}&deg;
+                          {% endif %}
+                        </div>
+                      </td>
+                      <td style="vertical-align:top;padding-left:12px;">
+                        {% if day.events %}
+                        {% for event in day.events %}
+                        <div style="font-size:13px;color:#444;padding:1px 0;">
+                          <span style="color:#999;">{{ format_event_time_short(event) }}</span>
+                          <span> {{ event.summary }}</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div style="font-size:13px;color:#aaa;font-style:italic;">Free</div>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- LOCAL EVENTS SECTION -->
+        {% set has_local = local_events_today or local_events_weekend or local_events_weekday %}
+        {% if has_local %}
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;margin-top:8px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Local Events</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 8px 32px;">
+
+            {% if local_events_today %}
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;">Today</div>
+            {% for evt in local_events_today %}
+            <div style="padding:5px 0;border-bottom:1px solid #f5f5f5;">
+              <div style="font-size:14px;color:#222;font-weight:500;">{{ evt.title }}</div>
+              <div style="font-size:12px;color:#777;margin-top:2px;">
+                {{ format_local_event_when(evt) }}
+                {% if evt.location %} · {{ evt.location }}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if local_events_weekend %}
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:12px;margin-bottom:6px;">This Weekend</div>
+            {% for evt in local_events_weekend %}
+            <div style="padding:5px 0;border-bottom:1px solid #f5f5f5;">
+              <div style="font-size:14px;color:#222;font-weight:500;">{{ evt.title }}</div>
+              <div style="font-size:12px;color:#777;margin-top:2px;">
+                {{ format_local_event_when(evt) }}
+                {% if evt.location %} · {{ evt.location }}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if local_events_weekday %}
+            <div style="color:#2b6cb0;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:12px;margin-bottom:6px;">This Week</div>
+            {% for evt in local_events_weekday %}
+            <div style="padding:5px 0;border-bottom:1px solid #f5f5f5;">
+              <div style="font-size:14px;color:#222;font-weight:500;">{{ evt.title }}</div>
+              <div style="font-size:12px;color:#777;margin-top:2px;">
+                {{ format_local_event_when(evt) }}
+                {% if evt.location %} · {{ evt.location }}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- TODOS SECTION -->
+        {% if has_todos %}
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;margin-top:8px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Todos</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 8px 32px;">
+
+            {% if todos_overdue %}
+            <div style="color:#c53030;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;">Overdue</div>
+            {% for task in todos_overdue %}
+            <div style="padding:5px 0 5px 12px;border-left:3px solid #c53030;margin-bottom:4px;">
+              <div style="font-size:14px;color:#222;">{{ task.content }}</div>
+              {% set due = task_due_date(task) %}
+              {% if due %}
+              <div style="font-size:12px;color:#c53030;margin-top:2px;">Due {{ due }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if todos_due_today %}
+            <div style="color:#d97706;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:10px;margin-bottom:6px;">Due Today</div>
+            {% for task in todos_due_today %}
+            {% set is_urgent = task.priority == 1 %}
+            <div style="padding:5px 0 5px 12px;border-left:3px solid {% if is_urgent %}#c53030{% else %}#d97706{% endif %};margin-bottom:4px;">
+              <div style="font-size:14px;color:#222;">
+                {% if is_urgent %}<span style="color:#c53030;font-size:12px;font-weight:700;">URGENT </span>{% endif %}
+                {{ task.content }}
+              </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if todos_due_soon %}
+            <div style="color:#d97706;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:10px;margin-bottom:6px;">Due Soon</div>
+            {% for task in todos_due_soon %}
+            <div style="padding:4px 0 4px 12px;border-left:3px solid #e2e8f0;margin-bottom:3px;">
+              <div style="font-size:14px;color:#222;">{{ task.content }}</div>
+              <div style="font-size:12px;color:#777;margin-top:1px;">{{ format_due_delta(task) }}</div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if todos_this_week %}
+            <div style="color:#555;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:10px;margin-bottom:6px;">This Week</div>
+            {% for task in todos_this_week %}
+            <div style="padding:4px 0 4px 12px;border-left:3px solid #e2e8f0;margin-bottom:3px;">
+              <div style="font-size:14px;color:#333;">{{ task.content }}</div>
+              <div style="font-size:12px;color:#999;margin-top:1px;">{{ format_due_delta(task) }}</div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if todos_untriaged %}
+            <div style="color:#555;font-size:12px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;margin-top:10px;margin-bottom:6px;">Inbox / Untriaged</div>
+            {% for task in todos_untriaged %}
+            <div style="padding:4px 0 4px 12px;border-left:3px solid #cbd5e0;margin-bottom:3px;">
+              <div style="font-size:14px;color:#555;">{{ task.content }}</div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- EMAIL SECTION -->
+        {% if today.email and today.email.accounts %}
+        <tr>
+          <td style="background-color:#1a1a2e;padding:10px 32px;margin-top:8px;">
+            <div style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">Email</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:18px 32px 8px 32px;">
+            {% for acct in today.email.accounts %}
+            <div style="margin-bottom:14px;">
+              <div style="font-size:14px;font-weight:700;color:#1a1a2e;margin-bottom:4px;">
+                {{ acct.account }}
+                {% if acct.unread > 0 %}
+                <span style="display:inline-block;background-color:#2b6cb0;color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:6px;">{{ acct.unread }}</span>
+                {% elif acct.unread == 0 %}
+                <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:6px;">inbox zero</span>
+                {% endif %}
+              </div>
+              {% if acct.important %}
+              {% for msg in acct.important %}
+              <div style="padding:4px 0 4px 12px;border-left:3px solid #bee3f8;margin-bottom:4px;">
+                <div style="font-size:13px;color:#2b6cb0;font-weight:500;">{{ msg.from }}</div>
+                <div style="font-size:13px;color:#444;">{{ msg.subject }}</div>
+              </div>
+              {% endfor %}
+              {% endif %}
+            </div>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- FOOTER -->
+        <tr>
+          <td style="background-color:#f7fafc;border-top:1px solid #e2e8f0;padding:16px 32px;text-align:center;">
+            <div style="font-size:12px;color:#aaa;">Personal Assistant · {{ date }}</div>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
