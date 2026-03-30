@@ -15,10 +15,36 @@ console = Console()
 
 
 @click.command()
-def briefing():
+@click.option("--html", "output_html", is_flag=True, help="Output HTML instead of Rich terminal format.")
+@click.option("--email", "send_email", is_flag=True, help="Send briefing as HTML email.")
+@click.option("--to", "email_to", default=None, help="Email recipient (defaults to crossfit account).")
+def briefing(output_html: bool, send_email: bool, email_to: str | None):
     """Show your daily briefing."""
-    console.print()
     data = generate_briefing()
+
+    if output_html or send_email:
+        from assistant.services.briefing_html import render_html
+        html = render_html(data)
+
+        if send_email:
+            from assistant.services import gmail as gmail_svc
+            from assistant import config
+            recipient = email_to or config.GOOGLE_ACCOUNTS.get("crossfit", "")
+            result = gmail_svc.send_message(
+                to=recipient,
+                subject=f"Daily Briefing — {data['date']}",
+                body=html,
+                account="crossfit",
+                html=True,
+            )
+            click.echo(f"Briefing sent to {recipient} (id: {result['id']})")
+            return
+
+        click.echo(html)
+        return
+
+    # Default: Rich terminal output
+    console.print()
 
     hour = datetime.now().hour
     if hour < 12:
