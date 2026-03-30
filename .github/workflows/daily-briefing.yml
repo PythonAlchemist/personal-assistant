@@ -1,0 +1,37 @@
+name: Daily Briefing Email
+
+on:
+  schedule:
+    # 8 AM ET = noon UTC (EDT) / 1 PM UTC (EST)
+    # Use noon UTC (covers EDT); in winter it arrives at 8 AM EST
+    - cron: '0 12 * * *'
+  workflow_dispatch: # Allow manual trigger for testing
+
+jobs:
+  send-briefing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --extra calendar
+
+      - name: Configure data directory
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_TOKEN_PERSONAL: ${{ secrets.GOOGLE_TOKEN_PERSONAL }}
+          GOOGLE_TOKEN_CROSSFIT: ${{ secrets.GOOGLE_TOKEN_CROSSFIT }}
+        run: bash scripts/setup_ci_data.sh
+
+      - name: Send briefing email
+        run: uv run assistant briefing --email
