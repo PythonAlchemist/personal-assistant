@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.4"]
+dev = ["pytest>=9.0.3", "ruff>=0.4"]
 chat = ["anthropic>=0.40"]
 calendar = ["google-api-python-client", "google-auth-oauthlib"]
 maps = ["googlemaps>=4.10"]
